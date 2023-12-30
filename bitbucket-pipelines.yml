@@ -1,0 +1,26 @@
+#Before pushing it in BitBucket make sure you deleted node_modules folder and package-lock.json file
+
+image: cypress/base:14.16.0
+
+test: &test
+  name: Cypress Tests
+  caches:
+    - node
+    - cypress
+  script:
+    - npm start &
+    - npx cypress run --record --ci-build-id $BITBUCKET_BUILD_NUMBER
+pipelines:
+  default:
+    - step:
+        name: Install dependencies
+        caches:
+          - npm
+          - cypress
+          - node
+        script:
+          - npm install
+definitions:
+  caches:
+    npm: $HOME/.npm
+    cypress: $HOME/.cache/Cypress
