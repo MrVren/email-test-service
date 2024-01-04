@@ -1,6 +1,11 @@
 {
   "devDependencies": {
     "cypress": "^13.6.1",
+    "cypress-mailslurp": "^1.7.0",
     "cypress-testrail": "^2.1.1"
+  },
+  "dependencies": {
+    "googleapis": "^129.0.0",
+    "mailslurp-client": "^15.17.4"
   }
 }
