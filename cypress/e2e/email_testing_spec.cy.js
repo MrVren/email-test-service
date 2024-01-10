@@ -2,6 +2,8 @@
 
 describe('Checking the contact between the customer and the photographer', () => {
 
+    const uniqueNumber = Cypress._.random(0, 1e6);
+
     const photographer_page = 'https://app.picsello.com/photographer/michael-droz-photo'
 
     // Customer's info
@@ -9,7 +11,7 @@ describe('Checking the contact between the customer and the photographer', () =>
     const inboxId = Cypress.env('inboxId')
     let c_email
     const c_phone = '4444224444'
-    const c_message = 'This is a test shoot request from QA'
+    const c_message = `This is a test shoot. Code:${uniqueNumber}`
 
     // Photographer's credentials
     const user_host = Cypress.env('user_host')
@@ -20,18 +22,21 @@ describe('Checking the contact between the customer and the photographer', () =>
 
     // Variables for test results
     let fullReport = ''
-    let report1 = ''
-    let report2 = ''
-    let report3 = ''
+    let report1 = 'Test 1: Contact Form Submission - '
+    let report2 = 'Test 2: Photographer Login - '
+    let report3 = 'Test 3: Photographer Received Customer Inquiry - '
+    let report4 = 'Test 4: Automation Auto Reply - '
 
     Cypress.on('fail', (error, runnable) => {
         // Catch and record the error for the corresponding test
-        if (runnable.title === 'C214: Sending shoot request') {
-            report1 = `Test 1: "Sending shoot request" failed\nError: ${error.message}\n`
-        } else if (runnable.title === 'C215: Should receive customer\'s request') {
-            report2 = `Test 2: "Should receive customer\'s request" failed\nError: ${error.message}\n`
-        } else if (runnable.title === 'C216: Should receive autoreply') {
-            report3 = `Test 3: "Should receive autoreply" failed\nError: ${error.message}\n`
+        if (runnable.title === 'Contact Form Submission') {
+            report1 += `Failed\nError: ${error.message}\n`
+        } else if (runnable.title === 'Photographer Login') {
+            report2 += `Failed\nError: ${error.message}\n`
+        } else if (runnable.title === 'Photographer Received Customer Inquiry') {
+            report3 += `Failed\nError: ${error.message}\n`
+        } else if (runnable.title === 'Automation Auto Reply') {
+            report4 += `Failed\nError: ${error.message}\n`
         }
     })
 
@@ -39,7 +44,7 @@ describe('Checking the contact between the customer and the photographer', () =>
         //pass
     })
 
-    it('C214: Sending shoot request', () => {
+    it('Contact Form Submission', () => {
         cy.getInbox(inboxId).then(inbox => {
             c_email = inbox.emailAddress
             cy.log(`${c_email} mailbox ready`)
@@ -54,31 +59,34 @@ describe('Checking the contact between the customer and the photographer', () =>
             cy.wait(1000)
             cy.get('h2').should('include.text', 'Thank you for contacting me')
                 .then(() => {
-                    report1 = 'Test 1: "Sending shoot request" passed\n'
+                    report1 += 'Passed\n'
                 })
         })
     })
-/*
-    it('C215: Should receive customer\'s request', () => {
-        cy.visit(`${user_host}/users/log_in`)
-        cy.get('#user_email').type(user_email)
-            .should('have.attr', 'type', 'email')
-            .and('have.value', user_email)
-        cy.get('#user_password').type(user_passwd)
-            .should('have.attr', 'type', 'password')
-            .and('have.value', user_passwd)
-        cy.get('.btn-primary').click()
-        cy.wait(2000)
-        cy.visit(`${user_host}/inbox`)
-        //this shit is not working
-        cy.get('.mx-4').click()
-        cy.get('.whitespace-pre-line').should('contain.text', c_message)
+
+    it('Photographer Login', () => {
+        cy.login(user_email, user_passwd)
             .then(() => {
-                report2 = 'Test 2: "Should receive customer\'s request" passed\n'
+                report2 += 'Passed\n'
             })
     })
-*/
-    it('C216: Should receive autoreply', () => {
+
+    it('Photographer Received Customer Inquiry', () => {
+        cy.login(user_email, user_passwd)
+        cy.visit(`${user_host}/inbox`)
+        cy.wait(2000)
+        cy.contains('New lead from profile').click({force: true, multiple: true})
+        cy.get('.whitespace-pre-line').should('contain.text', c_message)
+            .then(() => {
+                report3 += 'Passed\n'
+            })
+        cy.get('.top-0 > .ml-auto').click()
+        cy.wait(2000)
+        cy.get('.btn-warning').click()
+        cy.wait(2000)
+    })
+
+    it('Automation Auto Reply', () => {
         cy.waitForLatestEmail(inboxId).then(email => {
             //verify we received an email
             cy.wrap(email).should('exist')
@@ -88,12 +96,12 @@ describe('Checking the contact between the customer and the photographer', () =>
             cy.log('Deleting message...')
             cy.clearInbox(email.id)
             cy.log('Message was deleted. Mailbox is empty')
-            report3 = 'Test 3: "Should receive autoreply" passed\n'
+            report4 += 'Passed\n'
         })
     })
 
     it('Sending report', () => {
-        fullReport = report1 + report2 + report3
+        fullReport = report1 + report2 + report3 + report4
         cy.log(`Full report: ${fullReport}`)
         cy.sendReport(inboxId, fullReport)
     })
