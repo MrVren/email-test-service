@@ -2,10 +2,6 @@ const { MailSlurp } = require('mailslurp-client');
 const apiKey = Cypress.env('mail_api')
 const mailslurp = new MailSlurp({ apiKey })
 
-Cypress.Commands.add("createInbox", () => {
-    return mailslurp.createInbox()
-})
-
 Cypress.Commands.add("waitForLatestEmail", (inboxId) => {
     const timeout = 30_000
     return mailslurp.waitForLatestEmail(inboxId, timeout)
